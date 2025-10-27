@@ -24,6 +24,9 @@ class Face_Recognition_System:
         f_lbl1 = Label(self.root,image=self.photoimg1)
         f_lbl1.place(x=0,y=0,width=1530,height=200)
 
+      
+
+
         #lower image
         #inorder to place the image in our screen we have to use the Image.open()
         img2 = Image.open(r"C:\repo\Facial-Recognition-Attendance\bg2.jpg")
@@ -35,8 +38,38 @@ class Face_Recognition_System:
 
         #text on the top of the lower image
 
-        title_lb = Label(img2,text="Face Recognition Attendence System Software",font=("Times New Roman"),bg="Black",fg="Red")
+        title_lb = Label(f_lbl2,text="Face Recognition Attendance System Software",font=("Times New Roman",40,"bold"),bg="Black",fg="White")
         title_lb.place(x=0,y=0,width=1530,height=45)
+
+        #student button
+        btn1 = Button(self.root,text="Student",cursor="hand2",font=("Times New Roman",10,"bold"),bg="Black",fg="White")
+        btn1.place(x=220,y=300,width=100,height=50)
+
+        #face detector
+        btn2 = Button(self.root,text="Face Detector",cursor="hand2")
+        btn2.place(x=400,y=300,width=100,height=50)
+
+        #Attendence
+        btn3 = Button(self.root,text="Attendance",cursor="hand2")
+        btn3.place(x=620,y=300,width=100,height=50)
+
+        #train
+        btn4 = Button(self.root,text="Train Data",cursor="hand2")
+        btn4.place(x=800,y=300,width=100,height=50)
+
+        #Photos of Face Button
+        btn5 = Button(self.root,text="Photos",cursor="hand2")
+        btn5.place(x=1020,y=300,width=100,height=50)
+
+        #Exit button
+        btn6=Button(self.root,text="Exit",cursor="hand2")
+        btn6.place(x=1200,y=300,width=100,height=50)
+
+
+
+
+
+
 
 
 if __name__ == "__main__":
