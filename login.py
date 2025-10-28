@@ -27,5 +27,34 @@ class Login:
 
         Button(frame, text="Login", command=self.login_student, width=15, bg="blue", fg="white").grid(row=2, columnspan=2, pady=10)
 
+    #login credentials
+    def login_student(self):
+        regno = self.var_regno.get().strip()
+        password = self.var_password.get().strip()
+
+        if regno=="" or password=="":
+            messagebox.showerror("Enter the regno and password")
+            return
+
+        if not os.path.exists("students.csv"):
+            messagebox.showerror("Registered students not found , Please Sign-up")
+            return
+
+        with open("students.csv","r") as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                if row["Regno"]==regno and row["Password"]==password:
+                    messagebox.showinfo("Success", f"Welcome {row['Name']}!")
+                    self.open_attendance_window(row)
+                    return
+
+        messagebox.showerror("Invalid regno or password")
         
+
+
+
+
+
+
+
 
