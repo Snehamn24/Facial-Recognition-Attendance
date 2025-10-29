@@ -4,6 +4,8 @@ import cv2
 import csv
 import os
 import datetime
+import numpy as np
+import face_recognition
 
 class Login:
     def __init__(self,root):
