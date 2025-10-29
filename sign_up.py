@@ -51,12 +51,14 @@ class signup:
     # ====== Capture Face ======
     def capture_face(self):
         name = self.var_name.get()
-        if name == "":
+        regno = self.var_regno.get()
+        if name == "" or regno=="":
             messagebox.showerror("Error", "Please enter the name before capturing face.")
             return
-
-        folder_path = os.path.join(os.getcwd(), "dataset")
+        #count = 0
+        folder_path = os.path.join("dataset",regno)
         os.makedirs(folder_path, exist_ok=True)
+        #cv2.imwrite(os.path.join(folder_path, f"{name}_{count}.jpg"), img)
 
         cap = cv2.VideoCapture(0)
         face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
