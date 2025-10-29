@@ -93,55 +93,83 @@ class AttendanceWindow:
             messagebox.showerror("Error", "No valid face encodings found.")
             return
 
-        cap = cv2.VideoCapture(0)
-        messagebox.showinfo("Info", "Camera is now active. Press ENTER to stop.")
+        
 
-        recognized = False
+        cap = cv2.VideoCapture(0)
+        messagebox.showinfo("Info", "Camera is opening... Look at the camera.")
+
+        face_recognized = False #flag
 
         while True:
+
             ret, frame = cap.read()
             if not ret:
                 break
+       
 
+            # Convert frame to RGB for face_recognition
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             face_locations = face_recognition.face_locations(rgb_frame)
             encodings = face_recognition.face_encodings(rgb_frame, face_locations)
 
             for (top, right, bottom, left), face_encoding in zip(face_locations, encodings):
-                matches = face_recognition.compare_faces(known_encodings, face_encoding, tolerance=0.5)
 
-                color = (0, 0, 255)  # Default red
+                matches = face_recognition.compare_faces(known_encodings, face_encoding, tolerance=0.5)
+                color = (0, 0, 255)  # Red box for mismatch
                 label = "Unknown"
 
                 if True in matches:
-                    color = (0, 255, 0)
-                    label = name
-                    recognized = True
+                    color = (0, 255, 0)  # Green = matched
+                    label = f"{name} ({regno})"
 
-                    # Draw details box
-                    cv2.rectangle(frame, (left, top - 60), (right, top), (0, 128, 255), -1)
-                    cv2.putText(frame, f"Name: {name}", (left + 5, top - 40), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-                    cv2.putText(frame, f"RegNo: {regno}", (left + 5, top - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                
 
+                    # Display student details on screen
                     cv2.rectangle(frame, (left, top), (right, bottom), color, 2)
+                    cv2.rectangle(frame, (left, bottom - 35), (right, bottom), color, cv2.FILLED)
+                    cv2.putText(frame, label, (left + 5, bottom - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+
+                    # Also show Course & Semester on top left
+                    cv2.putText(frame, f"Course: {course}", (30, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                    cv2.putText(frame, f"Sem: {sem}", (30, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+
+                    # Save attendance
                     self.save_attendance(regno, name, course, sem)
-                    cap.release()
-                    cv2.destroyAllWindows()
                     messagebox.showinfo("Success", "Attendance marked successfully!")
-                    return
+                    #cap.release()
+                    face_recognized = True
+                    #cv2.destroyAllWindows()
+                    break
+                else:
 
-                cv2.rectangle(frame, (left, top), (right, bottom), color, 2)
-                cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
+                    # Draw red box for unknown
+                    cv2.rectangle(frame, (left, top), (right, bottom), color, 2)
+                    cv2.putText(frame, label, (left, top - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
 
-            cv2.imshow("Attendance - Face Recognition", frame)
-            if cv2.waitKey(1) == 13:  # Enter key to stop
+                
+
+            cv2.imshow("Face Recognition - Mark Attendance", frame)
+
+            #Exit Conditions
+            if face_recognized:
+                break
+            if cv2.waitKey(1)==13:#Press Enter to Exit manually
                 break
 
         cap.release()
         cv2.destroyAllWindows()
+        if face_recognized:
+             messagebox.showinfo("Success", "Attendance marked successfully.")
 
-        if not recognized:
-            messagebox.showerror("Error", "Face not recognized. Attendance not marked.")
+        else:
+            messagebox.showerror("Error","Face not recognized and attendance not marked")
+       
+
+
+
+   
 
     def save_attendance(self, regno, name, course, sem):
         filename = "attendance.csv"
