@@ -77,28 +77,37 @@ class AttendanceWindow:
         sem = self.student["Sem"]
 
         dataset_path = os.path.join("dataset", regno)
+
         if not os.path.exists(dataset_path):
             messagebox.showerror("Error", "No face data found for this student.")
             return
 
+         # Load saved images and encode faces for this specific student
         known_encodings = []
         for file in os.listdir(dataset_path):
-            img_path = os.path.join(dataset_path, file)
-            img = face_recognition.load_image_file(img_path)
-            encodings = face_recognition.face_encodings(img)
-            if encodings:
-                known_encodings.append(encodings[0])
+            if file.lower().endswith(('.jpg', '.jpeg', '.png')):
+                img_path = os.path.join(dataset_path, file)
+                img = face_recognition.load_image_file(img_path)
+                encodings = face_recognition.face_encodings(img)
+                if encodings:
+                    known_encodings.append(encodings[0])
 
+
+            
+                
         if not known_encodings:
             messagebox.showerror("Error", "No valid face encodings found.")
             return
 
         
-
+        #start camera for live face detection
         cap = cv2.VideoCapture(0)
-        messagebox.showinfo("Info", "Camera is opening... Look at the camera.")
+        if not cap.isOpened():
+            messagebox.showerror("Error","Could not open the camera")
+            return
 
-        face_recognized = False #flag
+        detected = False #flag
+        messagebox.showinfo("Info", "Camera started. Look at the camera to mark attendance.")
 
         while True:
 
@@ -115,60 +124,57 @@ class AttendanceWindow:
             for (top, right, bottom, left), face_encoding in zip(face_locations, encodings):
 
                 matches = face_recognition.compare_faces(known_encodings, face_encoding, tolerance=0.5)
-                color = (0, 0, 255)  # Red box for mismatch
-                label = "Unknown"
+                #color = (0, 0, 255)  # Red box for mismatch
+                
+                
+                #label = "Unknown"
 
                 if True in matches:
-                    color = (0, 255, 0)  # Green = matched
-                    label = f"{name} ({regno})"
+                    #color = (0, 255, 0)  # Green = matched
+                    #label = f"{name} ({regno})"
+                    detected = True
 
                 
 
                     # Display student details on screen
-                    cv2.rectangle(frame, (left, top), (right, bottom), color, 2)
-                    cv2.rectangle(frame, (left, bottom - 35), (right, bottom), color, cv2.FILLED)
-                    cv2.putText(frame, label, (left + 5, bottom - 10),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                    cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                    cv2.putText(frame, f"Name: {name}", (left, bottom + 25), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                    cv2.putText(frame, f"RegNo: {regno}", (left, bottom + 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                    cv2.putText(frame, f"Course: {course}", (left, bottom + 75), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
-                    # Also show Course & Semester on top left
-                    cv2.putText(frame, f"Course: {course}", (30, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                    cv2.putText(frame, f"Sem: {sem}", (30, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                    
+
 
                     # Save attendance
                     self.save_attendance(regno, name, course, sem)
+                    cv2.imshow("Attendance",frame)
                     messagebox.showinfo("Success", "Attendance marked successfully!")
-                    #cap.release()
-                    face_recognized = True
-                    #cv2.destroyAllWindows()
-                    break
-                else:
+                    cap.release()
+                    #face_recognized = True
+                    cv2.destroyAllWindows()
+                    return 
 
-                    # Draw red box for unknown
-                    cv2.rectangle(frame, (left, top), (right, bottom), color, 2)
-                    cv2.putText(frame, label, (left, top - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+            # Draw red box for unknown
+            cv2.imshow("Attendance", frame)
+            if cv2.waitKey(1) == 13:
+                break # Press Enter to stop
+            
 
+                    
                 
 
-            cv2.imshow("Face Recognition - Mark Attendance", frame)
+            #cv2.imshow("Face Recognition - Mark Attendance", frame)
 
             #Exit Conditions
-            if face_recognized:
-                break
-            if cv2.waitKey(1)==13:#Press Enter to Exit manually
-                break
+            #if face_recognized:
+                #break
+            #if cv2.waitKey(1)==13:#Press Enter to Exit manually
+                #break
 
         cap.release()
         cv2.destroyAllWindows()
-        if face_recognized:
-             messagebox.showinfo("Success", "Attendance marked successfully.")
-
-        else:
-            messagebox.showerror("Error","Face not recognized and attendance not marked")
-       
-
-
-
+        if not detected:
+            messagebox.showwarning("Warning","Face not Recognized Attendance not marked")
    
 
     def save_attendance(self, regno, name, course, sem):
