@@ -3,6 +3,7 @@ from tkinter import ttk, messagebox
 import csv
 import os
 import cv2
+import face_recognition
 
 class signup:
     def __init__(self, root):
@@ -50,15 +51,42 @@ class signup:
 
     # ====== Capture Face ======
     def capture_face(self):
-        name = self.var_name.get()
-        regno = self.var_regno.get()
+        name = self.var_name.get().strip()
+        regno = self.var_regno.get().strip()
         if name == "" or regno=="":
             messagebox.showerror("Error", "Please enter the name before capturing face.")
             return
-        #count = 0
+        #create folder to collect the photo sample 
         folder_path = os.path.join("dataset",regno)
         os.makedirs(folder_path, exist_ok=True)
         #cv2.imwrite(os.path.join(folder_path, f"{name}_{count}.jpg"), img)
+
+        #Load all the Existing face encodings from the dataset
+        existing_encodings = []
+        existing_regnos = []
+
+        dataset_dir = "dataset"
+        if os.path.exists(dataset_dir):
+            for student_folder in os.listdir(dataset_dir):
+                student_path = os.path.join(dataset_dir,student_folder)
+                if not os.path.isdir(student_path):
+                    continue
+                for img_file in os.listdir(student_path):
+                    if img_file.lower().endswith((".jpg", ".jpeg", ".png")):
+                        img_path = os.path.join(student_path,img_file)
+                        try:
+                            img = face_recognition.load_image_file(img_path)
+                            encodings = face_recognition.face_encodings(img)
+                            if encodings:
+                                existing_encodings.append(encodings[0])
+                                existing_regnos.append(student_folder)
+                        except  Exception as e: 
+                            print(f"Skipping {img_path}: {e}")
+                    
+
+        
+            
+
 
         cap = cv2.VideoCapture(0)
         face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
@@ -74,16 +102,42 @@ class signup:
             faces = face_cascade.detectMultiScale(gray, 1.3, 5)
 
             for (x, y, w, h) in faces:
-                img_id += 1
+                #img_id += 1
                 face_img = frame[y:y + h, x:x + w]
-                file_path = os.path.join(folder_path, f"{name}_{img_id}.jpg")
-                cv2.imwrite(file_path, face_img)
-                cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
-                cv2.putText(frame, str(img_id), (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                #file_path = os.path.join(folder_path, f"{name}_{img_id}.jpg")
+                #cv2.imwrite(file_path, face_img)
+                #cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+                #cv2.putText(frame, str(img_id), (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                rgb_face = cv2.cvtColor(face_img, cv2.COLOR_BGR2RGB)
+                new_encodings = face_recognition.face_encodings(rgb_face)
+
+                if new_encodings:
+                    new_face = new_encodings[0]
+
+                    #check if the face already exists
+                    if existing_encodings:
+                        matches = face_recognition.compare_faces(existing_encodings, new_face, tolerance=0.5)
+                        if True in matches:
+                            matched_regno = existing_regnos[matches.index(True)]
+                            messagebox.showerror(
+                                "Duplicate Face",
+                                f"This face already exists in the system and is registered under RegNo: {matched_regno}"
+                            )
+                            cap.release()
+                            cv2.destroyAllWindows()
+                            return
+                    img_id += 1
+                    file_path = os.path.join(folder_path, f"{name}_{img_id}.jpg")
+                    cv2.imwrite(file_path, face_img)
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+                    cv2.putText(frame, str(img_id), (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
             cv2.imshow("Capturing Faces", frame)
             if cv2.waitKey(1) == 13 or img_id >= 10:
                 break
+
+
+            
 
         cap.release()
         cv2.destroyAllWindows()
