@@ -1,79 +1,85 @@
-#import the libraries
-
-from tkinter import * #imports all the modules from the tkinter label,button,textbox
-
-from tkinter import ttk #imports themed tkinter module which provides the modern widgets
-
-from PIL import Image , ImageTk #these are used to work with the images 
-
-#Image -> for open,manipulate and save
-#ImageTk -> Used to convert PIL images into Tkinter-compatible format (so they can be displayed in a GUI).
-
+from tkinter import *
+from PIL import Image, ImageTk
+import os
 
 class Face_Recognition_System:
-    def __init__(self,root):
+    def __init__(self, root):
         self.root = root
         self.root.geometry("1530x790+0+0")
         self.root.title("Face Recognition System")
 
-        #upper image
-        img1 = Image.open(r"C:\repo\Facial-Recognition-Attendance\face_bg.webp")
-        img1 = img1.resize((1530,200))
-        self.photoimg1 = ImageTk.PhotoImage(img1)
+        # ========== Background Image ==========
+        img_bg = Image.open(r"C:\repo\Facial-Recognition-Attendance\bg2.jpg")
+        img_bg = img_bg.resize((800, 600))
+        self.photoimg_bg = ImageTk.PhotoImage(img_bg)
 
-        f_lbl1 = Label(self.root,image=self.photoimg1)
-        f_lbl1.place(x=0,y=0,width=1530,height=200)
+        bg_label = Label(self.root, image=self.photoimg_bg)
+        bg_label.place(relx=0.5, rely=0.5, anchor=CENTER, width=800, height=600)
 
-      
+        # ========== Title Bar ==========
+        title_lb = Label(
+            self.root,
+            text="Face Recognition Attendance System",
+            font=("Times New Roman", 38, "bold"),
+            bg="black",
+            fg="white"
+        )
+        title_lb.place(x=0, y=0, width=1530, height=70)
 
+        # ========== Buttons (Directly on Root) ==========
+        btn_font = ("Times New Roman", 15, "bold")
 
-        #lower image
-        #inorder to place the image in our screen we have to use the Image.open()
-        img2 = Image.open(r"C:\repo\Facial-Recognition-Attendance\bg2.jpg")
-        img2 = img2.resize((1530,590))
-        self.photoimg2 = ImageTk.PhotoImage(img2)
+        # Student Sign-In
+        btn_signup = Button(
+            self.root,
+            text="Student Sign-In",
+            font=btn_font,
+            bg="#0B0C10",
+            fg="white",
+            cursor="hand2",
+            width=20,
+            command=self.open_sign_up
+        )
+        btn_signup.place(relx=0.5, rely=0.45, anchor=CENTER)
 
-        f_lbl2 = Label(self.root,image=self.photoimg2)
-        f_lbl2.place(x=0,y=200,width=1530,height=590)
+        # Student Login
+        btn_login = Button(
+            self.root,
+            text="Student Login",
+            font=btn_font,
+            bg="#1F2833",
+            fg="white",
+            cursor="hand2",
+            width=20,
+            command=self.open_login
+        )
+        btn_login.place(relx=0.5, rely=0.55, anchor=CENTER)
 
-        #text on the top of the lower image
+        # Admin
+        btn_admin = Button(
+            self.root,
+            text="Admin",
+            font=btn_font,
+            bg="#45A29E",
+            fg="white",
+            cursor="hand2",
+            width=20,
+            command=self.open_admin
+        )
+        btn_admin.place(relx=0.5, rely=0.65, anchor=CENTER)
 
-        title_lb = Label(f_lbl2,text="Face Recognition Attendance System Software",font=("Times New Roman",40,"bold"),bg="Black",fg="White")
-        title_lb.place(x=0,y=0,width=1530,height=45)
+    # ========== Button Functions ==========
+    def open_sign_up(self):
+        os.system("python sign_up.py")
 
-        #student button
-        btn1 = Button(self.root,text="Student",cursor="hand2",font=("Times New Roman",10,"bold"),bg="Black",fg="White")
-        btn1.place(x=220,y=300,width=100,height=50)
+    def open_login(self):
+        os.system("python login.py")
 
-        #face detector
-        btn2 = Button(self.root,text="Face Detector",cursor="hand2")
-        btn2.place(x=400,y=300,width=100,height=50)
-
-        #Attendence
-        btn3 = Button(self.root,text="Attendance",cursor="hand2")
-        btn3.place(x=620,y=300,width=100,height=50)
-
-        #train
-        btn4 = Button(self.root,text="Train Data",cursor="hand2")
-        btn4.place(x=800,y=300,width=100,height=50)
-
-        #Photos of Face Button
-        btn5 = Button(self.root,text="Photos",cursor="hand2")
-        btn5.place(x=1020,y=300,width=100,height=50)
-
-        #Exit button
-        btn6=Button(self.root,text="Exit",cursor="hand2")
-        btn6.place(x=1200,y=300,width=100,height=50)
-
-
-
-
-
-
+    def open_admin(self):
+        os.system("python admin_login.py")
 
 
 if __name__ == "__main__":
     root = Tk()
     obj = Face_Recognition_System(root)
     root.mainloop()
-
