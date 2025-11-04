@@ -1,8 +1,9 @@
 from tkinter import *
 from PIL import Image, ImageTk
 import os
+from tkinter import messagebox,ttk
 
-class Face_Recognition_System:
+class sign_up:
     def __init__(self, root):
         self.root = root
         self.root.geometry("1530x790+0+0")
@@ -45,7 +46,7 @@ class Face_Recognition_System:
         # Student Login
         btn_login = Button(
             self.root,
-            text="Student Login",
+            text="Student/Admin Login",
             font=btn_font,
             bg="#1F2833",
             fg="white",
@@ -55,18 +56,7 @@ class Face_Recognition_System:
         )
         btn_login.place(relx=0.5, rely=0.55, anchor=CENTER)
 
-        # Admin
-        btn_admin = Button(
-            self.root,
-            text="Admin",
-            font=btn_font,
-            bg="#45A29E",
-            fg="white",
-            cursor="hand2",
-            width=20,
-            command=self.open_admin
-        )
-        btn_admin.place(relx=0.5, rely=0.65, anchor=CENTER)
+       
 
     # ========== Button Functions ==========
     def open_sign_up(self):
@@ -75,11 +65,10 @@ class Face_Recognition_System:
     def open_login(self):
         os.system("python login.py")
 
-    def open_admin(self):
-        os.system("python admin_login.py")
+    
 
 
 if __name__ == "__main__":
     root = Tk()
-    obj = Face_Recognition_System(root)
+    obj =sign_up(root)
     root.mainloop()

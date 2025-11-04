@@ -1,9 +1,19 @@
 from tkinter import *
 from tkinter import ttk, messagebox
-import csv
 import os
+import csv
 import cv2
+import dlib
 import face_recognition
+from scipy.spatial import distance as dist
+
+def eye_aspect_ratio(eye):
+    # Compute EAR
+    A = dist.euclidean(eye[1], eye[5])
+    B = dist.euclidean(eye[2], eye[4])
+    C = dist.euclidean(eye[0], eye[3])
+    ear = (A + B) / (2.0 * C)
+    return ear
 
 class signup:
     def __init__(self, root):
@@ -11,7 +21,6 @@ class signup:
         self.root.title("Sign up")
         self.root.geometry("500x500")
 
-        # Variables
         self.var_name = StringVar()
         self.var_pass = StringVar()
         self.var_regno = StringVar()
@@ -21,7 +30,6 @@ class signup:
         title = Label(self.root, text="Student Face Recognition Form", font=("Times New Roman", 10, "bold"))
         title.pack(pady=10)
 
-        # Form Frame
         form_frame = Frame(self.root, padx=10, pady=10, bd=2, relief=RIDGE)
         form_frame.pack(pady=20)
 
@@ -49,101 +57,77 @@ class signup:
         Button(form_frame, text="Capture Face", command=self.capture_face, width=15, bg="blue", fg="white").grid(row=5, column=0, pady=15)
         Button(form_frame, text="Register", command=self.register_data, width=15, bg="green", fg="white").grid(row=5, column=1, pady=15)
 
-    # ====== Capture Face ======
+
     def capture_face(self):
         name = self.var_name.get().strip()
         regno = self.var_regno.get().strip()
-        if name == "" or regno=="":
-            messagebox.showerror("Error", "Please enter the name before capturing face.")
+        if name == "" or regno == "":
+            messagebox.showerror("Error", "Please enter the name and regno before capturing.")
             return
-        #create folder to collect the photo sample 
-        folder_path = os.path.join("dataset",regno)
+
+        folder_path = os.path.join("dataset", regno)
         os.makedirs(folder_path, exist_ok=True)
-        #cv2.imwrite(os.path.join(folder_path, f"{name}_{count}.jpg"), img)
 
-        #Load all the Existing face encodings from the dataset
-        existing_encodings = []
-        existing_regnos = []
+        # Load dlib face detector and predictor
+        detector = dlib.get_frontal_face_detector()
+        predictor = dlib.shape_predictor(r"C:\repo\Facial-Recognition-Attendance\shape_predictor_68_face_landmarks (1).dat")
 
-        dataset_dir = "dataset"
-        if os.path.exists(dataset_dir):
-            for student_folder in os.listdir(dataset_dir):
-                student_path = os.path.join(dataset_dir,student_folder)
-                if not os.path.isdir(student_path):
-                    continue
-                for img_file in os.listdir(student_path):
-                    if img_file.lower().endswith((".jpg", ".jpeg", ".png")):
-                        img_path = os.path.join(student_path,img_file)
-                        try:
-                            img = face_recognition.load_image_file(img_path)
-                            encodings = face_recognition.face_encodings(img)
-                            if encodings:
-                                existing_encodings.append(encodings[0])
-                                existing_regnos.append(student_folder)
-                        except  Exception as e: 
-                            print(f"Skipping {img_path}: {e}")
-                    
-
-        
-            
-
+        # Define eye landmark indices
+        (lStart, lEnd) = (42, 48)
+        (rStart, rEnd) = (36, 42)
+        EAR_THRESHOLD = 0.21
+        CONSEC_FRAMES = 2
+        blink_detected = False
+        counter = 0
 
         cap = cv2.VideoCapture(0)
-        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-
-        img_id = 0
-        messagebox.showinfo("Info", "Capturing 10 face samples. Please look at the camera.")
+        messagebox.showinfo("Instruction", "Look at the camera and blink to confirm you're live.")
 
         while True:
             ret, frame = cap.read()
             if not ret:
                 break
+
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+            rects = detector(gray, 0)
 
-            for (x, y, w, h) in faces:
-                #img_id += 1
-                face_img = frame[y:y + h, x:x + w]
-                #file_path = os.path.join(folder_path, f"{name}_{img_id}.jpg")
-                #cv2.imwrite(file_path, face_img)
-                #cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
-                #cv2.putText(frame, str(img_id), (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-                rgb_face = cv2.cvtColor(face_img, cv2.COLOR_BGR2RGB)
-                new_encodings = face_recognition.face_encodings(rgb_face)
+            for rect in rects:
+                shape = predictor(gray, rect)
+                shape = [(shape.part(i).x, shape.part(i).y) for i in range(68)]
 
-                if new_encodings:
-                    new_face = new_encodings[0]
+                leftEye = shape[lStart:lEnd]
+                rightEye = shape[rStart:rEnd]
+                leftEAR = eye_aspect_ratio(leftEye)
+                rightEAR = eye_aspect_ratio(rightEye)
+                ear = (leftEAR + rightEAR) / 2.0
 
-                    #check if the face already exists
-                    if existing_encodings:
-                        matches = face_recognition.compare_faces(existing_encodings, new_face, tolerance=0.5)
-                        if True in matches:
-                            matched_regno = existing_regnos[matches.index(True)]
-                            messagebox.showerror(
-                                "Duplicate Face",
-                                f"This face already exists in the system and is registered under RegNo: {matched_regno}"
-                            )
-                            cap.release()
-                            cv2.destroyAllWindows()
-                            return
-                    img_id += 1
-                    file_path = os.path.join(folder_path, f"{name}_{img_id}.jpg")
-                    cv2.imwrite(file_path, face_img)
-                    cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
-                    cv2.putText(frame, str(img_id), (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                if ear < EAR_THRESHOLD:
+                    counter += 1
+                else:
+                    if counter >= CONSEC_FRAMES:
+                        blink_detected = True
+                        messagebox.showinfo("Live Confirmed", "Blink detected — capturing your face now!")
+                    counter = 0
 
-            cv2.imshow("Capturing Faces", frame)
-            if cv2.waitKey(1) == 13 or img_id >= 10:
+                if blink_detected:
+                    for i in range(1, 6):
+                        file_path = os.path.join(folder_path, f"{name}_{i}.jpg")
+                        cv2.imwrite(file_path, frame)
+                    messagebox.showinfo("Success", "Face captured successfully after blink!")
+                    blink_detected = False
+                    cap.release()
+                    cv2.destroyAllWindows()
+                    return
+
+            cv2.imshow("Live Detection (Press 'q' to exit)", frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-
-
-            
 
         cap.release()
         cv2.destroyAllWindows()
-        messagebox.showinfo("Result", "Face samples captured successfully!")
+        messagebox.showinfo("Exit", "No blink detected. Try again with a real person.")
 
-    # ====== Register Data ======
+
     def register_data(self):
         name = self.var_name.get()
         password = self.var_pass.get()
@@ -157,17 +141,15 @@ class signup:
 
         file_exists = os.path.exists("students.csv")
 
-        # Check for duplicates
         if file_exists:
             with open("students.csv", "r") as file:
                 reader = csv.reader(file)
                 next(reader, None)
                 for row in reader:
                     if len(row) >= 5 and row[3] == reg and row[4] == course:
-                        messagebox.showerror("Error", "Student with same Reg No and Course already exists!")
+                        messagebox.showerror("Error", "Student already exists!")
                         return
 
-        # Auto ID
         next_id = 1
         if file_exists:
             with open("students.csv", "r") as file:
@@ -176,7 +158,6 @@ class signup:
                     last_line = lines[-1].split(",")
                     next_id = int(last_line[0]) + 1
 
-        # Write to CSV
         with open("students.csv", "a", newline="") as file:
             writer = csv.writer(file)
             if not file_exists:
@@ -184,8 +165,6 @@ class signup:
             writer.writerow([next_id, name, password, reg, course, sem])
 
         messagebox.showinfo("Success", f"Student Registered Successfully!\nYour ID: {next_id}")
-
-        # Clear fields
         self.var_name.set("")
         self.var_pass.set("")
         self.var_regno.set("")
